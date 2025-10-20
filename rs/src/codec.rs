@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::convert::TryFrom as _;
 use std::io::Cursor;
 
 use rmpv::decode::read_value;
@@ -10,11 +11,11 @@ use crate::object::{EncodedCustomType, NamespaceRef, Object};
 
 pub const CUSTOM_TYPE_EXT: i8 = 8;
 
-pub type NameSpaces = HashMap<String, NameSpace>;
+pub type Namespaces = HashMap<String, Namespace>;
 
-pub enum NameSpace {
+pub enum Namespace {
     Static(HashMap<u32, Box<dyn CustomTypeCodec>>),
-    Dynamic(Box<dyn CustomNameSpace>),
+    Dynamic(Box<dyn CustomNamespace>),
 }
 
 pub trait CustomTypeCodec: Send + Sync {
@@ -27,7 +28,7 @@ pub trait CustomTypeCodec: Send + Sync {
     fn decode(&self, codec: &mut Codec, data: &EncodedCustomType) -> Result<Object, Error>;
 }
 
-pub trait CustomNameSpace: Send + Sync {
+pub trait CustomNamespace: Send + Sync {
     fn matches(&self, _obj: &Object) -> bool {
         false
     }
@@ -38,19 +39,19 @@ pub trait CustomNameSpace: Send + Sync {
 }
 
 pub struct Codec {
-    namespaces: NameSpaces,
+    namespaces: Namespaces,
     intern_context: InternContext,
 }
 
 impl Codec {
-    pub fn new(namespaces: Option<NameSpaces>) -> Self {
+    pub fn new(namespaces: Option<Namespaces>) -> Self {
         Self {
             namespaces: namespaces.unwrap_or_default(),
             intern_context: InternContext::new(),
         }
     }
 
-    pub fn add_namespace(&mut self, namespace: String, types: NameSpace) -> Result<(), Error> {
+    pub fn add_namespace(&mut self, namespace: String, types: Namespace) -> Result<(), Error> {
         if self.namespaces.contains_key(&namespace) {
             return Err(Error::InvalidState);
         }
@@ -252,14 +253,16 @@ impl Codec {
                 NamespaceRef::Name(value.into_owned())
             }
             Value::Integer(value) => {
-                let id = value.as_u64().ok_or(Error::InvalidCustomNamespace)? as u32;
+                let raw = value.as_u64().ok_or(Error::InvalidCustomNamespace)?;
+                let id = u32::try_from(raw).map_err(|_| Error::InvalidCustomNamespace)?;
                 NamespaceRef::Id(id)
             }
             _ => return Err(Error::InvalidCustomNamespace),
         };
 
         let type_id_value = read_value(&mut cursor)?;
-        let type_id = type_id_value.as_u64().ok_or(Error::InvalidCustomTypeId)? as u32;
+        let type_id_raw = type_id_value.as_u64().ok_or(Error::InvalidCustomTypeId)?;
+        let type_id = u32::try_from(type_id_raw).map_err(|_| Error::InvalidCustomTypeId)?;
 
         let consumed = cursor.position() as usize;
         let payload = data
