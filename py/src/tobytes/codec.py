@@ -27,13 +27,9 @@ class CustomTypeCodec:
     py_type: type
     encoder: Callable[['Codec', object], bytes]
     decoder: Callable[['Codec', bytes], object]
-    match_subtypes: bool = False
     
     def matches(self, obj: object) -> bool:
-        if self.match_subtypes:
-            return isinstance(obj, self.py_type)
-        else:
-            return type(obj) is self.py_type
+        return type(obj) is self.py_type
         
 
 class CustomNameSpace:
@@ -46,22 +42,103 @@ class CustomNameSpace:
 
     def decode(self, codec: 'Codec', data: bytes) -> object:
         raise NotImplementedError(f'{type(self)} does not implement decode')
+    
 
+class NamespaceModule:
 
-NameSpace = dict[int, CustomTypeCodec] | CustomNameSpace
-NameSpaces = dict[str, NameSpace]
+    @dataclass
+    class TypeCodec:
+        py_type: type
+        type_id: int
+        encoder: Optional[Callable[['Codec', object], bytes]] = None
+        decoder: Optional[Callable[['Codec', bytes], object]] = None
+
+    def __init__(self, name: str):
+        self.name = name
+        self.codecs = []
+
+    def _check_unique_id(self, type_id: int):
+        for codec in self.codecs:
+            if codec.type_id == type_id:
+                raise ValueError(f"Type ID {type_id} is already used in namespace '{self.name}'")
+
+    def encoder(self, py_type: type, type_id: int):
+        self._check_unique_id(type_id)
+        codec = self.TypeCodec(
+            py_type=py_type,
+            type_id=type_id,
+        )
+        self.codecs.append(codec)
+
+        def decorate_decode_fn(decode_fn: Callable[['Codec', object], bytes]):
+            codec.decoder = decode_fn
+            return decode_fn
+        
+        def decorate_encode_fn(encode_fn: Callable[['Codec', bytes], object]):
+            codec.encoder = encode_fn # type: ignore
+            encode_fn.decoder = decorate_decode_fn
+            return encode_fn
+        return decorate_encode_fn
+    
+    def decoder(self, py_type: type, type_id: int):
+        self._check_unique_id(type_id)
+        codec = self.TypeCodec(
+            py_type=py_type,
+            type_id=type_id,
+        )
+        self.codecs.append(codec)
+
+        def decorate_encode_fn(encode_fn: Callable[['Codec', object], bytes]):
+            codec.encoder = encode_fn
+            return encode_fn
+        
+        def decorate_decode_fn(decode_fn: Callable[['Codec', bytes], object]):
+            codec.decoder = decode_fn
+            decode_fn.encoder = decorate_encode_fn
+            return decode_fn
+        return decorate_decode_fn
+    
+    def custom_types(self) -> dict[int, CustomTypeCodec]:
+        result = {}
+        for codec in self.codecs:
+            result[codec.type_id] = CustomTypeCodec(
+                py_type=codec.py_type,
+                encoder=codec.encoder,
+                decoder=codec.decoder,
+            )
+        return result
+
+Namespace = dict[int, CustomTypeCodec] | CustomNameSpace
+Namespaces = dict[str, Namespace]
 
 
 class Codec:
 
-    def __init__(self, namespaces: Optional[NameSpaces]=None):
+    def __init__(self, namespaces: Optional[Namespaces]=None):
         self.namespaces = dict(namespaces) if namespaces else {}
         self._intern_context = InternContext()
+        self._type_map = {}
+        self._rebuild_type_map()
 
-    def add_namespace(self, namespace: str, types: NameSpace):
+    def _rebuild_type_map(self):
+        self._type_map = {}
+        for namespace, types in self.namespaces.items():
+            if isinstance(types, CustomNameSpace):
+                continue
+            for type_id, codec in types.items():
+                self._type_map[codec.py_type] = (namespace, type_id, codec)
+
+    def add_namespace(self, namespace: str, types: Namespace):
         if namespace in self.namespaces:
             raise ValueError(f"Namespace '{namespace}' already exists.")
         self.namespaces[namespace] = types
+        self._rebuild_type_map()
+
+    def add_module(self, module: NamespaceModule):
+        if module.name in self.namespaces and self.namespaces[module.name] is not module:
+            raise ValueError(f"Namespace '{module.name}' already exists.")
+        self.namespaces[module.name] = module.custom_types()
+        self._rebuild_type_map()
 
     def _encode_custom_type(self, namespace: str, type_id: int, codec: CustomTypeCodec, obj) -> msgpack.ExtType:
         encoded_data = codec.encoder(self, obj)
@@ -75,6 +152,11 @@ class Codec:
             encoder = lambda val: msgpack.packb(val, default=self._default_encoder, strict_types=True)
             return self._intern_context.intern(obj, encoder)
 
+        py_type = type(obj)
+        if py_type in self._type_map:
+            namespace, type_id, codec = self._type_map[py_type]
+            return self._encode_custom_type(namespace, type_id, codec, obj)
+        
         for namespace, types in self.namespaces.items():
             if isinstance(types, CustomNameSpace):
                 if types.matches(obj):
@@ -83,10 +165,6 @@ class Codec:
                     type_id_bytes = msgpack.packb(0)
                     payload = namespace_bytes + type_id_bytes + encoded_data
                     return msgpack.ExtType(CUSTOM_TYPE_EXT, payload)
-            else:
-                for type_id, codec in types.items():
-                    if codec.matches(obj):
-                        return self._encode_custom_type(namespace, type_id, codec, obj)
         raise TypeError(f"Cannot serialize object of type {type(obj)}")
 
     def _ext_hook(self, code, data):

@@ -26,9 +26,11 @@ def test_custom():
     assert isinstance(deserialized, MyType)
     assert deserialized.value == 1
 
+
 class AnotherType:
     def __init__(self, value):
         self.value = value
+
 
 class MyCustomNameSpace(tobytes.CustomNameSpace):
     def matches(self, obj: object) -> bool:
@@ -39,6 +41,7 @@ class MyCustomNameSpace(tobytes.CustomNameSpace):
 
     def decode(self, codec: tobytes.Codec, data: bytes) -> object:
         return AnotherType(codec.loads(data))
+
 
 def test_custom_namespace():
     codec = tobytes.Codec()

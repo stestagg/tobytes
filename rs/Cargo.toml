@@ -1,0 +1,9 @@
+[package]
+name = "tobytes"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rmp = "0.8"
+rmpv = "1.3"
+thiserror = "1.0"
