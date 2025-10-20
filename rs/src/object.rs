@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use rmpv::{Integer, Timestamp};
+use rmpv::Integer;
 
 #[derive(Clone, PartialEq)]
 pub enum Object {
@@ -16,7 +16,6 @@ pub enum Object {
     Map(Vec<(Object, Object)>),
     Ext(i8, Vec<u8>),
     Custom(EncodedCustomType),
-    Timestamp(Timestamp),
     Intern(InternValue),
 }
 
@@ -41,7 +40,6 @@ impl fmt::Debug for Object {
                 .field("len", &data.len())
                 .finish(),
             Object::Custom(custom) => f.debug_tuple("Custom").field(custom).finish(),
-            Object::Timestamp(ts) => f.debug_tuple("Timestamp").field(ts).finish(),
             Object::Intern(intern) => f.debug_tuple("Intern").field(intern).finish(),
         }
     }
@@ -137,7 +135,7 @@ impl EncodedCustomType {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq)]
 pub struct InternValue {
     value: Arc<Object>,
     by_identity: bool,

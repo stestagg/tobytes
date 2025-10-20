@@ -34,7 +34,7 @@ impl Ext {
     }
 
     pub fn write<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
-        rmp::encode::write_ext_meta(writer, self.ty, self.data.len() as u32)?;
+        rmp::encode::write_ext_meta(writer, self.data.len() as u32, self.ty)?;
         writer.write_all(&self.data)?;
         Ok(())
     }
@@ -43,29 +43,6 @@ impl Ext {
 enum TableState {
     Encoding(EncodingInternTable),
     Decoding(DecodedInternTable),
-}
-
-impl TableState {
-    fn as_encoding_mut(&mut self) -> Option<&mut EncodingInternTable> {
-        match self {
-            TableState::Encoding(table) => Some(table),
-            _ => None,
-        }
-    }
-
-    fn as_decoding(&self) -> Option<&DecodedInternTable> {
-        match self {
-            TableState::Decoding(table) => Some(table),
-            _ => None,
-        }
-    }
-
-    fn as_decoding_mut(&mut self) -> Option<&mut DecodedInternTable> {
-        match self {
-            TableState::Decoding(table) => Some(table),
-            _ => None,
-        }
-    }
 }
 
 pub struct InternContext {
@@ -81,12 +58,17 @@ impl InternContext {
         self.state = None;
     }
 
-    pub fn intern<F>(&mut self, intern_value: InternValue, mut encoder: F) -> Result<Ext, Error>
+    pub fn intern<F>(&mut self, intern_value: InternValue, encoder: F) -> Result<Ext, Error>
     where
         F: FnMut(&Object) -> Result<Vec<u8>, Error>,
     {
         let table = self.ensure_encoding_table()?;
         table.intern(intern_value, encoder)
+    }
+
+    pub fn intern_with_encoded(&mut self, intern_value: InternValue, encoded: Vec<u8>) -> Result<Ext, Error> {
+        let table = self.ensure_encoding_table()?;
+        table.intern_with_encoded(intern_value, encoded)
     }
 
     pub fn finalize_encoding(&mut self, data: Vec<u8>) -> Result<Vec<u8>, Error> {
@@ -99,7 +81,7 @@ impl InternContext {
                     payload.extend_from_slice(&data);
 
                     let mut buf = Vec::new();
-                    rmp::encode::write_ext_meta(&mut buf, INTERN_TABLE_EXT, payload.len() as u32)?;
+                    rmp::encode::write_ext_meta(&mut buf, payload.len() as u32, INTERN_TABLE_EXT)?;
                     buf.write_all(&payload)?;
                     Ok(buf)
                 }
@@ -203,6 +185,19 @@ impl EncodingInternTable {
         }
 
         let encoded = encoder(intern_value.value())?;
+        self.intern_with_encoded(intern_value, encoded)
+    }
+
+    fn intern_with_encoded(&mut self, intern_value: InternValue, encoded: Vec<u8>) -> Result<Ext, Error> {
+        if intern_value.by_identity() {
+            let key = intern_value.pointer();
+            if let Some(&idx) = self.by_id.get(&key) {
+                return Self::create_reference(idx);
+            }
+        } else if let Some(idx) = self.find_by_equality(intern_value.value()) {
+            return Self::create_reference(idx);
+        }
+
         let idx = self.entries.len();
         self.entries.push(encoded);
         let arc = intern_value.arc_clone();

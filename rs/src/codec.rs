@@ -6,7 +6,7 @@ use rmpv::decode::read_value;
 use rmpv::Value;
 
 use crate::error::Error;
-use crate::intern::{Ext, InternContext, INTERN_TABLE_EXT};
+use crate::intern::{InternContext, INTERN_TABLE_EXT};
 use crate::object::{EncodedCustomType, NamespaceRef, Object};
 
 pub const CUSTOM_TYPE_EXT: i8 = 8;
@@ -123,21 +123,17 @@ impl Codec {
                 }
             }
             Object::Ext(code, data) => {
-                rmp::encode::write_ext_meta(buf, *code, data.len() as u32)?;
+                rmp::encode::write_ext_meta(buf, data.len() as u32, *code)?;
                 buf.extend_from_slice(data);
             }
             Object::Custom(custom) => {
                 let payload = self.encode_custom_payload(custom)?;
-                rmp::encode::write_ext_meta(buf, CUSTOM_TYPE_EXT, payload.len() as u32)?;
+                rmp::encode::write_ext_meta(buf, payload.len() as u32, CUSTOM_TYPE_EXT)?;
                 buf.extend_from_slice(&payload);
             }
-            Object::Timestamp(ts) => {
-                rmpv::encode::write_value(buf, &Value::Timestamp(*ts))?;
-            }
             Object::Intern(intern) => {
-                let ext = self
-                    .intern_context
-                    .intern(intern.clone(), |value| self.encode_object(value))?;
+                let encoded = self.encode_object(intern.value())?;
+                let ext = self.intern_context.intern_with_encoded(intern.clone(), encoded)?;
                 ext.write(buf)?;
             }
         }
@@ -168,8 +164,8 @@ impl Codec {
             Value::F32(value) => Ok(Object::F32(value)),
             Value::F64(value) => Ok(Object::F64(value)),
             Value::String(value) => {
-                let value = value.into_str().map_err(|_| Error::InvalidUtf8)?;
-                Ok(Object::String(value.into_owned()))
+                let value = value.into_str().ok_or(Error::InvalidUtf8)?;
+                Ok(Object::String(value))
             }
             Value::Binary(value) => Ok(Object::Binary(value)),
             Value::Array(values) => {
@@ -189,7 +185,6 @@ impl Codec {
                 Ok(Object::Map(result))
             }
             Value::Ext(code, data) => self.handle_ext(code, data),
-            Value::Timestamp(ts) => Ok(Object::Timestamp(ts)),
         }
     }
 
@@ -249,8 +244,8 @@ impl Codec {
         let namespace_value = read_value(&mut cursor)?;
         let namespace = match namespace_value {
             Value::String(value) => {
-                let value = value.into_str().map_err(|_| Error::InvalidUtf8)?;
-                NamespaceRef::Name(value.into_owned())
+                let value = value.into_str().ok_or(Error::InvalidUtf8)?;
+                NamespaceRef::Name(value)
             }
             Value::Integer(value) => {
                 let raw = value.as_u64().ok_or(Error::InvalidCustomNamespace)?;

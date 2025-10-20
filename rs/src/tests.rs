@@ -36,6 +36,19 @@ fn encode_with_intern_table() {
             ),
             (Object::from("repeat"), intern.clone()),
         ]),
+        shared.clone(),
+    ]);
+
+    // After encoding and decoding, Intern wrappers should be resolved to their actual values
+    let expected = Object::array(vec![
+        shared.clone(),
+        Object::map(vec![
+            (
+                Object::from("items"),
+                Object::array(vec![shared.clone(), Object::from("delta")]),
+            ),
+            (Object::from("repeat"), shared.clone()),
+        ]),
         shared,
     ]);
 
@@ -43,7 +56,7 @@ fn encode_with_intern_table() {
     let encoded = codec.dumps(&object).expect("encode");
     let decoded = codec.loads(&encoded).expect("decode");
 
-    assert_eq!(decoded, object);
+    assert_eq!(decoded, expected);
 }
 
 #[test]
@@ -60,8 +73,8 @@ fn decode_intern_forward_reference_fails() {
         rmp::encode::write_uint(&mut ref_buf, 1).unwrap();
         rmp::encode::write_ext_meta(
             &mut entries_buf,
-            crate::intern::INTERN_TABLE_EXT,
             ref_buf.len() as u32,
+            crate::intern::INTERN_TABLE_EXT,
         )
         .unwrap();
         entries_buf.extend_from_slice(&ref_buf);
@@ -73,8 +86,8 @@ fn decode_intern_forward_reference_fails() {
     let mut message = Vec::new();
     rmp::encode::write_ext_meta(
         &mut message,
-        crate::intern::INTERN_TABLE_EXT,
         payload.len() as u32,
+        crate::intern::INTERN_TABLE_EXT,
     )
     .unwrap();
     message.extend_from_slice(&payload);
