@@ -1,15 +1,15 @@
-mod error;
-mod encode;
 mod decode;
+mod encode;
+mod error;
 pub mod table_ns;
 use error::Error;
 
-pub use encode::{ToBytes, NamespaceEncodedValue};
 pub use decode::FromBytes;
+pub use encode::{NamespaceEncodedValue, ToBytes};
 pub use table_ns::{FromTableNs, ToTableNs};
 
 #[cfg(feature = "derive")]
-pub use tobytes_derive::{ToBytesDict, FromBytesDict};
+pub use tobytes_derive::{FromBytesDict, ToBytesDict};
 
 pub type ToBytesResult<T> = std::result::Result<T, Error>;
 
@@ -20,8 +20,8 @@ pub trait Namespace {
 pub const CUSTOM_TYPE_EXT: i8 = 8;
 
 pub mod prelude {
-    pub use crate::{ToBytes, FromBytes, Namespace, NamespaceEncodedValue, ToBytesResult};
-    pub use crate::{FromTableNs, ToTableNs};
+    pub use crate::{FromBytes, Namespace, NamespaceEncodedValue, ToBytes, ToBytesResult};
     #[cfg(feature = "derive")]
-    pub use crate::{ToBytesDict, FromBytesDict};
+    pub use crate::{FromBytesDict, ToBytesDict};
+    pub use crate::{FromTableNs, ToTableNs};
 }

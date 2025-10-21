@@ -1,0 +1,21 @@
+description: "Polars DataFrame round-trip via parquet"
+name: "PolarsDataFrame"
+rust_type: "polars::prelude::DataFrame"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+py_prepare: "pl.DataFrame(value)"
+py_compare: "expected == actual.to_dicts()"
+requires:
+  - polars
+tests:
+  -
+    - {id: 1, value: "a"}
+    - {id: 2, value: "b"}
+    - {id: 3, value: "c"}
+  -
+    - {idx: 0, amount: 1.5, flag: true}
+    - {idx: 1, amount: 2.75, flag: false}
+    - {idx: 2, amount: -3.25, flag: true}
+  -
+    - {letter: "x", count: 10}
+    - {letter: "y", count: 20}

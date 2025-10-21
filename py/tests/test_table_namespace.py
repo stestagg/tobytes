@@ -7,6 +7,18 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
+try:
+    import pandas as pd
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
+
+try:
+    import polars as pl
+    HAS_POLARS = True
+except ImportError:
+    HAS_POLARS = False
+
 
 @pytest.mark.skipif(not HAS_NUMPY, reason="numpy not installed")
 def test_numpy_array_default_namespace():
@@ -124,3 +136,37 @@ def test_numpy_array_in_complex_structure():
     assert np.array_equal(decoded["arrays"][0], data["arrays"][0])
     assert np.array_equal(decoded["arrays"][1], data["arrays"][1])
     assert np.array_equal(decoded["metadata"]["value"], data["metadata"]["value"])
+
+
+@pytest.mark.skipif(not HAS_PANDAS, reason="pandas not installed")
+def test_pandas_dataframe_round_trip():
+    """Ensure pandas DataFrame objects round-trip via parquet encoding."""
+    codec = tobytes.Codec()
+
+    df = pd.DataFrame({
+        "id": [1, 2, 3],
+        "value": ["a", "b", "c"],
+    })
+
+    encoded = codec.dumps(df)
+    decoded = codec.loads(encoded)
+
+    assert isinstance(decoded, pd.DataFrame)
+    pd.testing.assert_frame_equal(decoded, df)
+
+
+@pytest.mark.skipif(not HAS_POLARS, reason="polars not installed")
+def test_polars_dataframe_round_trip():
+    """Ensure polars DataFrame objects round-trip via parquet encoding."""
+    codec = tobytes.Codec()
+
+    df = pl.DataFrame({
+        "id": [1, 2, 3],
+        "value": ["a", "b", "c"],
+    })
+
+    encoded = codec.dumps(df)
+    decoded = codec.loads(encoded)
+
+    assert isinstance(decoded, pl.DataFrame)
+    assert decoded.frame_equal(df)

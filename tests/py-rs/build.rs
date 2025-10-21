@@ -1,7 +1,6 @@
 use std::env;
 use std::fs;
 use std::path::Path;
-use std::collections::BTreeMap;
 
 #[derive(serde::Deserialize)]
 struct TestCase {
@@ -12,6 +11,7 @@ struct TestCase {
     rust_encode: Option<String>,
     rust_to_json: Option<String>,
     rust_from_json: Option<String>,
+    requires: Option<Vec<String>>,
 }
 
 fn main() {
@@ -42,7 +42,8 @@ fn main() {
     let mut code = String::new();
 
     code.push_str("use tobytes::prelude::*;\n");
-    code.push_str("use ndarray;\n\n");
+    code.push_str("use ndarray;\n");
+    code.push_str("use polars::prelude::*;\n\n");
 
     // Output all type definitions first
     for test_case in &test_cases {
