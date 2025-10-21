@@ -1,0 +1,17 @@
+description: "NumPy 1D ndarray with f64 dtype (Array1)"
+name: "NumpyNdarrayF64"
+rust_type: "ndarray::Array1<f64>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.to_vec())?"
+rust_from_json: "ndarray::Array1::from(serde_json::from_value::<Vec<f64>>(value.clone())?)"
+py_prepare: "np.array(value, dtype=np.float64)"
+py_compare: "np.allclose(expected, actual.tolist() if hasattr(actual, 'tolist') else actual)"
+tests:
+  # 1D arrays with floats
+  - []
+  - [1.0]
+  - [3.14159, 2.71828]
+  - [1.0, 2.5, 3.7, 4.2, 5.9]
+  - [-1.5, 0.0, 1.5, -100.25, 100.75]
+  - [1.23e-10, 1.23e+10, -1.23e-10, -1.23e+10]

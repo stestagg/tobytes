@@ -1,0 +1,15 @@
+description: "NumPy 2D ndarray with f32 dtype (Array2)"
+name: "NumpyNdarray2DF32"
+rust_type: "ndarray::Array2<f32>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.rows().into_iter().map(|row| row.to_vec()).collect::<Vec<_>>())?"
+rust_from_json: "{ let vv: Vec<Vec<f32>> = serde_json::from_value(value.clone())?; ndarray::Array2::from_shape_vec((vv.len(), vv.get(0).map(|r| r.len()).unwrap_or(0)), vv.into_iter().flatten().collect())? }"
+py_prepare: "np.array(value, dtype=np.float32)"
+py_compare: "np.allclose(expected, actual.tolist() if hasattr(actual, 'tolist') else actual)"
+tests:
+  # 2D arrays with floats
+  - [[1.0, 2.0], [3.0, 4.0]]
+  - [[1.5, 2.5, 3.5], [4.5, 5.5, 6.5]]
+  - [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
+  - [[-1.0, -2.0], [-3.0, -4.0]]

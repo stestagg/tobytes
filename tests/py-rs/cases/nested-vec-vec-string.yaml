@@ -1,0 +1,9 @@
+description: "Nested arrays of strings"
+name: "VecVecString"
+rust_type: "Vec<Vec<String>>"
+tests:
+  - []
+  - [[]]
+  - [["hello"]]
+  - [["hello", "world"], ["foo", "bar"]]
+  - [["admin", "active"], ["user"], ["guest", "readonly", "limited"]]

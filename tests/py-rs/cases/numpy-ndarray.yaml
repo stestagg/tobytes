@@ -1,0 +1,16 @@
+description: "NumPy 1D ndarray values (Array1)"
+name: "NumpyNdarray1D"
+rust_type: "ndarray::Array1<i32>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.to_vec())?"
+rust_from_json: "ndarray::Array1::from(serde_json::from_value::<Vec<i32>>(value.clone())?)"
+py_prepare: "np.array(value, dtype=np.int32)"
+py_compare: "expected == actual.tolist() if hasattr(actual, 'tolist') else expected == actual"
+tests:
+  # 1D arrays
+  - []
+  - [1]
+  - [1, 2, 3]
+  - [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  - [-1, 0, 1, -100, 100]

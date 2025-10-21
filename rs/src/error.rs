@@ -2,42 +2,40 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    
     #[error("msgpack encode error: {0}")]
     Encode(#[from] rmp::encode::ValueWriteError),
 
-    #[error("msgpack decode error: {0}")]
-    Decode(#[from] rmpv::decode::Error),
+    #[error("ndarray-npy error: {0}")]
+    NpyRead(#[from] ndarray_npy::ReadNpyError),
 
-    #[error("io error: {0}")]
+    #[error("ndarray-npy error: {0}")]
+    Npy(#[from] ndarray_npy::WriteNpyError),
+
+    #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("integer value out of range for msgpack encoding")]
-    IntegerOutOfRange,
+    #[error("msgpack decode error: {0}")]
+    Decode(#[from] rmp::decode::ValueReadError),
 
-    #[error("cannot encode intern table entries while decoding")]
-    InvalidState,
+    #[error("msgpack decode error: {0}")]
+    DecodeConvert(#[from] rmpv::decode::Error),
 
-    #[error("nested intern tables are not allowed")]
-    NestedInternTable,
+    #[error("Unexpected value: {0:?}")]
+    UnexpectedValue(rmpv::Value),
 
-    #[error("invalid intern table reference: index {index} (table size: {size})")]
-    InvalidInternReference { index: usize, size: usize },
+    #[error("Unexpected value: {0:?}")]
+    UnexpectedValueRef(String),
+}
 
-    #[error("forward intern reference detected: index {index} (table size: {size})")]
-    ForwardInternReference { index: usize, size: usize },
+impl From<rmpv::Value> for Error {
+    fn from(value: rmpv::Value) -> Self {
+        Error::UnexpectedValue(value)
+    }
+}
 
-    #[error("invalid intern table payload: expected array of entries")]
-    InvalidInternTable,
-
-    #[error("invalid intern reference payload")]
-    InvalidInternReferencePayload,
-
-    #[error("invalid custom type namespace value")]
-    InvalidCustomNamespace,
-
-    #[error("invalid custom type id value")]
-    InvalidCustomTypeId,
-
-    #[error("invalid utf-8 string in message")]
-    InvalidUtf8,
+impl From<rmpv::ValueRef<'_>> for Error {
+    fn from(value: rmpv::ValueRef<'_>) -> Self {
+        Error::UnexpectedValueRef(format!("{:?}", value))
+    }
 }

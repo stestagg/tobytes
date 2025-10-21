@@ -1,0 +1,11 @@
+description: "Nested arrays (2D arrays of i32)"
+name: "VecVecI32"
+rust_type: "Vec<Vec<i32>>"
+tests:
+  - []  # empty
+  - [[]]  # array containing empty array
+  - [[1, 2, 3]]  # single row
+  - [[1, 2], [3, 4]]  # 2x2 matrix
+  - [[1, 2, 3], [4, 5, 6], [7, 8, 9]]  # 3x3 matrix
+  - [[1], [2], [3], [4], [5]]  # column vector
+  - [[], [1], [2, 3], [4, 5, 6]]  # irregular row lengths

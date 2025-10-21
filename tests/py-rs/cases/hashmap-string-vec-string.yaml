@@ -1,0 +1,9 @@
+description: "HashMap with String keys and Vec<String> values"
+name: "HashMapStringVecString"
+rust_type: "std::collections::HashMap<String, Vec<String>>"
+tests:
+  - {}
+  - {"tags": []}
+  - {"tags": ["admin", "active"]}
+  - {"user1": ["admin", "active"], "user2": ["user"], "user3": ["guest", "readonly"]}
+  - {"features": ["feature1", "feature2", "feature3"], "permissions": ["read", "write"], "roles": ["admin"]}

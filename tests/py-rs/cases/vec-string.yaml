@@ -1,0 +1,10 @@
+description: "Arrays of strings"
+name: "VecString"
+rust_type: "Vec<String>"
+tests:
+  - []
+  - ["hello"]
+  - ["hello", "world"]
+  - ["admin", "active", "user"]
+  - ["feature1", "feature2", "feature3"]
+  - ["", "a", "hello world", "with spaces"]

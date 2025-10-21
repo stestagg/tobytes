@@ -1,0 +1,6 @@
+description: "Boolean values"
+name: "Bool"
+rust_type: "bool"
+tests:
+  - true
+  - false

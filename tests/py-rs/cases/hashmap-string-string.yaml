@@ -1,0 +1,8 @@
+description: "HashMap with String keys and String values"
+name: "HashMapStringString"
+rust_type: "std::collections::HashMap<String, String>"
+tests:
+  - {}
+  - {"name": "Alice"}
+  - {"name": "Alice", "role": "admin", "status": "active"}
+  - {"en": "Hello", "es": "Hola", "fr": "Bonjour", "de": "Guten Tag", "ja": "こんにちは"}

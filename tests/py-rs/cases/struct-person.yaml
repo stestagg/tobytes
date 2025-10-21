@@ -1,0 +1,15 @@
+description: "Struct with mixed-type fields (String, i32, bool) using ToBytesDict and FromBytesDict derive"
+name: "StructPerson"
+rust_type: "Person"
+type_definition: |
+  #[derive(Debug, Serialize, Deserialize, ToBytesDict, FromBytesDict)]
+  struct Person {
+      name: String,
+      age: i32,
+      active: bool,
+  }
+tests:
+  - {"name": "Alice", "age": 30, "active": true}
+  - {"name": "Bob", "age": 25, "active": false}
+  - {"name": "Charlie", "age": 0, "active": true}  # edge case: zero age
+  - {"name": "", "age": 100, "active": false}  # edge case: empty name

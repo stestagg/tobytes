@@ -1,0 +1,16 @@
+description: "NumPy 2D ndarray values (Array2)"
+name: "NumpyNdarray2D"
+rust_type: "ndarray::Array2<i32>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.rows().into_iter().map(|row| row.to_vec()).collect::<Vec<_>>())?"
+rust_from_json: "{ let vv: Vec<Vec<i32>> = serde_json::from_value(value.clone())?; ndarray::Array2::from_shape_vec((vv.len(), vv.get(0).map(|r| r.len()).unwrap_or(0)), vv.into_iter().flatten().collect())? }"
+py_prepare: "np.array(value, dtype=np.int32)"
+py_compare: "expected == actual.tolist() if hasattr(actual, 'tolist') else expected == actual"
+tests:
+  # 2D arrays
+  - [[1, 2], [3, 4]]
+  - [[1, 2, 3], [4, 5, 6]]
+  - [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  - [[10, 20], [30, 40], [50, 60]]
+  - [[-1, -2], [-3, -4]]

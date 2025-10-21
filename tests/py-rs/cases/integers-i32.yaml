@@ -1,0 +1,13 @@
+description: "Signed 32-bit integers including boundaries"
+name: "I32"
+rust_type: "i32"
+tests:
+  - 0
+  - 1
+  - -1
+  - 127
+  - -128
+  - 32767
+  - -32768
+  - 2147483647
+  - -2147483648

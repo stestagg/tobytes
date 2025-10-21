@@ -1,0 +1,16 @@
+description: "NumPy 1D ndarray with i64 dtype (Array1)"
+name: "NumpyNdarrayI64"
+rust_type: "ndarray::Array1<i64>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.to_vec())?"
+rust_from_json: "ndarray::Array1::from(serde_json::from_value::<Vec<i64>>(value.clone())?)"
+py_prepare: "np.array(value, dtype=np.int64)"
+py_compare: "expected == actual.tolist() if hasattr(actual, 'tolist') else expected == actual"
+tests:
+  # 1D arrays with 64-bit integers
+  - []
+  - [0]
+  - [1, 2, 3]
+  - [-9223372036854775808, 9223372036854775807]
+  - [1000000000, -1000000000, 5000000000, -5000000000]

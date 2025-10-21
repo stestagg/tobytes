@@ -1,0 +1,10 @@
+description: "Strings with unicode and escape sequences"
+name: "StringsSpecial"
+rust_type: "String"
+tests:
+  - "Hello 世界 🌍"
+  - "Unicode: 你好世界"
+  - "Emoji: 😀🎉🌟"
+  - "Line1\nLine2\tTabbed"
+  - "Quote: \"Hello\""
+  - "Backslash: \\"

@@ -1,0 +1,9 @@
+description: "HashMap with String keys and i32 values, testing map size boundaries"
+name: "HashMapStringI32"
+rust_type: "std::collections::HashMap<String, i32>"
+tests:
+  - {}  # empty map
+  - {"a": 1}  # single entry
+  - {"k1": 1, "k2": 2, "k3": 3}  # small map
+  - {"k1": 1, "k2": 2, "k3": 3, "k4": 4, "k5": 5, "k6": 6, "k7": 7, "k8": 8, "k9": 9, "k10": 10, "k11": 11, "k12": 12, "k13": 13, "k14": 14, "k15": 15}  # 15 entries - fixmap max
+  - {"k1": 1, "k2": 2, "k3": 3, "k4": 4, "k5": 5, "k6": 6, "k7": 7, "k8": 8, "k9": 9, "k10": 10, "k11": 11, "k12": 12, "k13": 13, "k14": 14, "k15": 15, "k16": 16}  # 16 entries - map16 boundary

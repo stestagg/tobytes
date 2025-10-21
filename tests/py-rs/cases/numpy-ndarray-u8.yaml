@@ -1,0 +1,16 @@
+description: "NumPy 1D ndarray with u8 dtype (Array1)"
+name: "NumpyNdarrayU8"
+rust_type: "ndarray::Array1<u8>"
+rust_decode: "FromTableNs::from_table_ns"
+rust_encode: "to_table_ns"
+rust_to_json: "serde_json::to_value(v.to_vec())?"
+rust_from_json: "ndarray::Array1::from(serde_json::from_value::<Vec<u8>>(value.clone())?)"
+py_prepare: "np.array(value, dtype=np.uint8)"
+py_compare: "expected == actual.tolist() if hasattr(actual, 'tolist') else expected == actual"
+tests:
+  # 1D arrays with unsigned 8-bit integers
+  - []
+  - [0]
+  - [1, 2, 3]
+  - [0, 127, 128, 255]
+  - [255, 254, 253, 1, 0]

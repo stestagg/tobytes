@@ -1,0 +1,9 @@
+description: "Unsigned 8-bit integers"
+name: "U8"
+rust_type: "u8"
+tests:
+  - 0
+  - 1
+  - 127
+  - 128
+  - 255

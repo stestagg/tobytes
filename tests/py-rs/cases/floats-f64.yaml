@@ -1,0 +1,13 @@
+description: "Floating point f64 values including special cases"
+name: "F64"
+rust_type: "f64"
+tests:
+  - 0.0
+  - 3.14159265359
+  - -2.71828182846
+  - 0.0000001
+  - 123456789.5
+  - 1.23e-10
+  - -1.23e-10
+  - 1.23e+10  # YAML requires explicit + for positive exponents
+  - -1.23e+10

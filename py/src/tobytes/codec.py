@@ -115,9 +115,22 @@ Namespaces = dict[str, Namespace]
 class Codec:
 
     def __init__(self, namespaces: Optional[Namespaces]=None):
-        self.namespaces = dict(namespaces) if namespaces else {}
+        self.namespaces = {}
         self._intern_context = InternContext()
         self._type_map = {}
+        self._add_default_namespaces()
+        if namespaces:
+            self.namespaces.update(namespaces)
+        self._rebuild_type_map()
+
+    def _add_default_namespaces(self):
+        """Add built-in default namespaces to the codec."""
+        from .table import table_namespace
+        self.namespaces[table_namespace.name] = table_namespace.custom_types()
+
+    def clear_namespaces(self):
+        """Remove all namespaces from the codec, including default namespaces."""
+        self.namespaces.clear()
         self._rebuild_type_map()
 
     def _rebuild_type_map(self):

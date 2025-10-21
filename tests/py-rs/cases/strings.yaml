@@ -1,0 +1,10 @@
+description: "String values with various lengths"
+name: "Strings"
+rust_type: "String"
+tests:
+  - ""
+  - "a"
+  - "hello"
+  - "Hello, World!"
+  - "The quick brown fox jumps over the lazy dog"
+  - "Unicode: 你好世界 🌍"
