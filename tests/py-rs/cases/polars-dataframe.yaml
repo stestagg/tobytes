@@ -3,8 +3,9 @@ name: "PolarsDataFrame"
 rust_type: "polars::prelude::DataFrame"
 rust_decode: "FromTableNs::from_table_ns"
 rust_encode: "to_table_ns"
+rust_from_json: "JsonReader::new(std::io::Cursor::new(serde_json::to_string(value)?.as_bytes())).finish()?"
 py_prepare: "pl.DataFrame(value)"
-py_compare: "expected == actual.to_dicts()"
+py_compare: "expected == (actual.to_dicts() if isinstance(actual, pl.DataFrame) else pl.DataFrame({col['name']: col['values'] for col in actual['columns']}).to_dicts())"
 requires:
   - polars
 tests:
