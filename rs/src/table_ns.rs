@@ -1,12 +1,13 @@
 use crate::decode::read_ns_payload;
 use crate::{Namespace, NamespaceEncodedValue, ToBytesResult};
+use ndarray::{Data, Dimension};
 use ndarray_npy::{ReadNpyExt, WriteNpyExt};
 use std::io::Read;
 
 #[cfg(feature = "polars")]
 use polars::io::parquet::{ParquetReader, ParquetWriter};
 #[cfg(feature = "polars")]
-use polars::prelude::DataFrame as PolarsDataFrame;
+use polars::prelude::{DataFrame as PolarsDataFrame, SerReader};
 
 pub trait ToTableNs {
     fn to_table_ns(&self) -> ToBytesResult<NamespaceEncodedValue>;
@@ -16,7 +17,12 @@ pub trait FromTableNs: Sized {
     fn from_table_ns<R: Read>(rd: &mut R) -> ToBytesResult<Self>;
 }
 
-impl<T: WriteNpyExt + 'static> ToTableNs for T {
+impl<S, D> ToTableNs for ndarray::ArrayBase<S, D>
+where
+    S: Data,
+    D: Dimension,
+    ndarray::ArrayBase<S, D>: WriteNpyExt,
+{
     fn to_table_ns(&self) -> ToBytesResult<NamespaceEncodedValue> {
         let buf = Vec::new();
         let mut wr = std::io::Cursor::new(buf);
@@ -29,10 +35,15 @@ impl<T: WriteNpyExt + 'static> ToTableNs for T {
     }
 }
 
-impl<T: ReadNpyExt + 'static> FromTableNs for T {
+impl<S, D> FromTableNs for ndarray::ArrayBase<S, D>
+where
+    S: Data,
+    D: Dimension,
+    ndarray::ArrayBase<S, D>: ReadNpyExt,
+{
     fn from_table_ns<R: std::io::Read>(rd: &mut R) -> ToBytesResult<Self> {
         let payload = read_ns_payload(rd, "table", 1)?;
-        Ok(T::read_npy(&mut std::io::Cursor::new(payload))?)
+        Ok(Self::read_npy(&mut std::io::Cursor::new(payload))?)
     }
 }
 
@@ -42,7 +53,8 @@ impl ToTableNs for PolarsDataFrame {
         let mut buffer = Vec::new();
         {
             let mut cursor = std::io::Cursor::new(&mut buffer);
-            ParquetWriter::new(&mut cursor).finish(self.clone())?;
+            let mut df_clone = self.clone();
+            ParquetWriter::new(&mut cursor).finish(&mut df_clone)?;
         }
 
         Ok(NamespaceEncodedValue {
