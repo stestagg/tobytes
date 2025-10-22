@@ -1,7 +1,6 @@
 use crate::ToBytesResult;
 use rmpv::decode::read_value;
 
-
 pub trait FromBytes {
     type Output;
 
@@ -23,18 +22,20 @@ pub fn read_ns_payload<'a, R: std::io::Read>(
             return Err(crate::error::Error::UnexpectedValue(rmpv::Value::String(
                 format!(
                     "Expected ext type id '{}', got '{}'",
-                    crate::CUSTOM_TYPE_EXT, type_id
+                    crate::CUSTOM_TYPE_EXT,
+                    type_id
                 )
                 .into(),
             )));
         }
         let mut cursor = std::io::Cursor::new(data);
-        let ns_name_utf_raw: rmpv::Utf8String = rmpv::decode::read_value(&mut cursor)?.try_into()?;
+        let ns_name_utf_raw: rmpv::Utf8String =
+            rmpv::decode::read_value(&mut cursor)?.try_into()?;
         let ns_name: &str = ns_name_utf_raw.as_str().ok_or_else(|| {
             crate::error::Error::UnexpectedValue(rmpv::Value::String(
                 "Namespace name is not valid UTF-8".into(),
             ))
-        })? ;
+        })?;
         if ns_name != expected_namespace {
             return Err(crate::error::Error::UnexpectedValue(rmpv::Value::String(
                 format!(
@@ -47,11 +48,7 @@ pub fn read_ns_payload<'a, R: std::io::Read>(
         let value_id: u64 = rmpv::decode::read_value(&mut cursor)?.try_into()?;
         if value_id != expected_id as u64 {
             return Err(crate::error::Error::UnexpectedValue(rmpv::Value::String(
-                format!(
-                    "Expected id '{}', got '{}'",
-                    expected_id, value_id
-                )
-                .into(),
+                format!("Expected id '{}', got '{}'", expected_id, value_id).into(),
             )));
         }
         let pos = cursor.position() as usize;
@@ -62,7 +59,6 @@ pub fn read_ns_payload<'a, R: std::io::Read>(
         )))
     }
 }
-
 
 macro_rules! impl_primitive_decode {
     ($t:ty, $inter:ty) => {
@@ -106,14 +102,15 @@ impl FromBytes for Bytes {
 
 impl<T> FromBytes for Vec<T>
 where
-    T: FromBytes<Output = T>
+    T: FromBytes<Output = T>,
 {
     type Output = Vec<T>;
 
     fn from_value(value: rmpv::Value) -> ToBytesResult<Self::Output> {
         let vec = Vec::<rmpv::Value>::try_from(value)?;
 
-        Ok(vec.into_iter()
+        Ok(vec
+            .into_iter()
             .map(|item| T::from_value(item))
             .collect::<ToBytesResult<Vec<T>>>()?)
     }
@@ -139,17 +136,17 @@ where
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
     use compose_idents::compose;
+    use rstest::rstest;
 
     macro_rules! core_type_value {
         ($ty:ty, $expected:expr, $value:expr) => {
-            compose! (
-                test_name = snake_case(concat(test_decoding, _, normalize($expected), hash($value))),
+            compose!(
+                test_name =
+                    snake_case(concat(test_decoding, _, normalize($expected), hash($value))),
                 {
                     #[rstest]
                     fn test_name() {
@@ -188,10 +185,18 @@ mod tests {
     core_type_value!(bool, true, vec![0xc3]);
 
     core_type_value!(f32, 3.14f32, vec![0xca, 0x40, 0x48, 0xf5, 0xc3]);
-    core_type_value!(f64, 3.14f64, vec![0xcb, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f]);
+    core_type_value!(
+        f64,
+        3.14f64,
+        vec![0xcb, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f]
+    );
 
     core_type_value!(String, "hello", vec![0xa5, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
-    core_type_value!(super::Bytes, super::Bytes(Vec::from(b"hello")), vec![0xc4, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
+    core_type_value!(
+        super::Bytes,
+        super::Bytes(Vec::from(b"hello")),
+        vec![0xc4, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]
+    );
     core_type_value!(Vec<u8>, vec![1u8, 2u8, 3u8], vec![0x93, 0x01, 0x02, 0x03]);
 
     #[rstest]
@@ -212,12 +217,14 @@ mod tests {
         assert!(
             actual1 == expected,
             "Expected: {:?}, Actual: {:?}",
-            expected, actual1
+            expected,
+            actual1
         );
         assert!(
             actual2 == expected,
             "Expected: {:?}, Actual: {:?}",
-            expected, actual2
+            expected,
+            actual2
         );
     }
 
@@ -275,5 +282,4 @@ mod tests {
             assert_eq!(unit, decoded);
         }
     }
-
 }

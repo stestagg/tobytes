@@ -1,6 +1,6 @@
 use crate::ToBytesResult;
-use std::io::Write;
 use rmpv::encode::write_value_ref;
+use std::io::Write;
 
 pub trait ToBytes {
     fn to_bytes<W: Write>(&self, wr: &mut W) -> ToBytesResult<()>;
@@ -29,20 +29,20 @@ macro_rules! impl_primitive_encode_ref {
     };
 }
 
-impl_primitive_encode_ref!{[u8]}
-impl_primitive_encode_ref!{str}
-impl_primitive_encode!{f32}
-impl_primitive_encode!{f64}
-impl_primitive_encode!{i16}
-impl_primitive_encode!{i32}
-impl_primitive_encode!{i64}
-impl_primitive_encode!{i8}
-impl_primitive_encode!{isize}
-impl_primitive_encode!{u16}
-impl_primitive_encode!{u32}
-impl_primitive_encode!{u64}
-impl_primitive_encode!{u8}
-impl_primitive_encode!{usize}
+impl_primitive_encode_ref! {[u8]}
+impl_primitive_encode_ref! {str}
+impl_primitive_encode! {f32}
+impl_primitive_encode! {f64}
+impl_primitive_encode! {i16}
+impl_primitive_encode! {i32}
+impl_primitive_encode! {i64}
+impl_primitive_encode! {i8}
+impl_primitive_encode! {isize}
+impl_primitive_encode! {u16}
+impl_primitive_encode! {u32}
+impl_primitive_encode! {u64}
+impl_primitive_encode! {u8}
+impl_primitive_encode! {usize}
 
 impl ToBytes for bool {
     fn to_bytes<W: Write>(&self, wr: &mut W) -> ToBytesResult<()> {
@@ -83,7 +83,6 @@ impl<K: ToBytes, V: ToBytes> ToBytes for std::collections::HashMap<K, V> {
     }
 }
 
-
 impl<const S: usize> ToBytes for &[u8; S] {
     fn to_bytes<W: Write>(&self, wr: &mut W) -> ToBytesResult<()> {
         let value: rmpv::ValueRef = rmpv::ValueRef::Binary(self.as_ref());
@@ -91,7 +90,6 @@ impl<const S: usize> ToBytes for &[u8; S] {
         Ok(())
     }
 }
-
 
 pub struct NamespaceEncodedValue {
     pub namespace: &'static str,
@@ -135,12 +133,12 @@ impl<T: ToBytes> ToBytes for NamespaceValue<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
     use compose_idents::compose;
+    use rstest::rstest;
 
     macro_rules! core_type_value {
         ($value:expr, $expected:expr) => {
-            compose! (
+            compose!(
                 test_name = snake_case(concat(test_encoding, _, normalize($value), hash($value))),
                 {
                     #[rstest]
@@ -177,17 +175,23 @@ mod tests {
     core_type_value!(-1i8, vec![0xff]);
     core_type_value!(-32i8, vec![0xe0]);
     core_type_value!(-33i8, vec![0xd0, 223]);
-    
+
     core_type_value!(false, vec![0xc2]);
     core_type_value!(true, vec![0xc3]);
 
     core_type_value!(3.14f32, vec![0xca, 0x40, 0x48, 0xf5, 0xc3]);
-    core_type_value!(3.14f64, vec![0xcb, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f]);
+    core_type_value!(
+        3.14f64,
+        vec![0xcb, 0x40, 0x09, 0x1e, 0xb8, 0x51, 0xeb, 0x85, 0x1f]
+    );
 
     core_type_value!("hello", vec![0xa5, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
-    core_type_value!("hello".to_string(), vec![0xa5, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
+    core_type_value!(
+        "hello".to_string(),
+        vec![0xa5, 0x68, 0x65, 0x6c, 0x6c, 0x6f]
+    );
     core_type_value!(b"hello", vec![0xc4, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
-    
+
     core_type_value!(vec![1u8, 2u8, 3u8], vec![0x93, 0x01, 0x02, 0x03]);
     #[rstest]
     fn test_encoding_hashmap() {
@@ -205,7 +209,9 @@ mod tests {
         assert!(
             actuals == expected_order1 || actuals == expected_order2,
             "Expected one of {:?} or {:?}, but got {:?}",
-            expected_order1, expected_order2, actuals
+            expected_order1,
+            expected_order2,
+            actuals
         );
     }
 
@@ -249,7 +255,8 @@ mod tests {
             if let rmpv::Value::Map(map) = decoded {
                 assert_eq!(map.len(), 2);
                 // Check that we have the expected keys
-                let keys: Vec<String> = map.iter()
+                let keys: Vec<String> = map
+                    .iter()
                     .map(|(k, _)| k.as_str().unwrap().to_string())
                     .collect();
                 assert!(keys.contains(&"name".to_string()));
@@ -302,5 +309,4 @@ mod tests {
             }
         }
     }
-
 }

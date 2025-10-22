@@ -2,7 +2,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    
     #[error("msgpack encode error: {0}")]
     Encode(#[from] rmp::encode::ValueWriteError),
 
@@ -14,6 +13,10 @@ pub enum Error {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[cfg(feature = "polars")]
+    #[error("polars error: {0}")]
+    Polars(#[from] polars::error::PolarsError),
 
     #[error("msgpack decode error: {0}")]
     Decode(#[from] rmp::decode::ValueReadError),

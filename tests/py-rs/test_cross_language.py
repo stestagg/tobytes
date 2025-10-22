@@ -6,6 +6,7 @@
 #     "click>=8.0",
 #     "pyyaml>=6.0",
 #     "numpy>=1.20",
+#     "polars",
 # ]
 #
 # [tool.uv.sources]
@@ -20,6 +21,7 @@ from pathlib import Path
 
 import click
 import numpy as np
+import polars as pl
 import tobytes
 import yaml
 
@@ -130,7 +132,7 @@ def normalize_value(value):
 
 def compare_values(original, decoded, path="", py_compare="expected == actual"):
     """Compare original and decoded values, handling type conversions."""
-    namespace = {'expected': original, 'actual': decoded, 'np': np}
+    namespace = {'expected': original, 'actual': decoded}
     try:
         result = eval(py_compare, globals(), namespace)
         if not result:
@@ -153,7 +155,6 @@ def run_test_case(case_file: Path, rust_binary: Path, verbose: bool = False):
     description = test_case.get('description', '')
     py_prepare = test_case.get('py_prepare')
     py_compare = test_case.get('py_compare', 'expected == actual')
-
     if verbose:
         print(f"\n{click.style('Testing', bold=True)} {case_name}: {description}")
         print(f"  Rust type: {test_case['rust_type']}")
